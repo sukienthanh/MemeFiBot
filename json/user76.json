@@ -1,0 +1,22 @@
+{
+    "operationName": "MutationTelegramUserLogin",
+    "variables": {
+        "webAppData": {
+            "auth_date": 1718965356,
+            "hash": "815e6aae9a0e722da1fb28d47a3b02febddab3c57f96715fe4579d3d27d07d98",
+            "query_id": "AAF4r0Q3AwAAAHivRDftHv-3",
+            "checkDataString": "auth_date=1718965356\nquery_id=AAF4r0Q3AwAAAHivRDftHv-3\nuser={\"id\":7369699192,\"first_name\":\"Le\",\"last_name\":\"4\",\"language_code\":\"en\",\"allows_write_to_pm\":true}",
+            "user": {
+                "id": 7369699192,
+                "allows_write_to_pm": true,
+                "first_name": "Le",
+                "last_name": "4",
+                "username": "",
+                "language_code": "en",
+                "version": "7.4",
+                "platform": "android"
+            }
+        }
+    },
+    "query": "mutation MutationTelegramUserLogin($webAppData: TelegramWebAppDataInput!) {\n  telegramUserLogin(webAppData: $webAppData) {\n    access_token\n    __typename\n  }\n}"
+}

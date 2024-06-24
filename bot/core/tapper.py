@@ -1,4 +1,5 @@
 import asyncio
+import json
 from time import time
 from random import randint
 from urllib.parse import unquote
@@ -15,85 +16,23 @@ from bot.utils import logger
 from bot.utils.graphql import Query, OperationName
 from bot.utils.boosts import FreeBoostType, UpgradableBoostType
 from bot.exceptions import InvalidSession
+from data import Data
 from .headers import headers
 
 class Tapper:
-    def __init__(self, tg_client: Client):
+    def __init__(self, tg_client: Data):
         self.session_name = tg_client.name
         self.tg_client = tg_client
 
         self.GRAPHQL_URL = 'https://api-gw-tg.memefi.club/graphql'
 
     async def get_tg_web_data(self, proxy: str | None):
-        if proxy:
-            proxy = Proxy.from_str(proxy)
-            proxy_dict = dict(
-                scheme=proxy.protocol,
-                hostname=proxy.host,
-                port=proxy.port,
-                username=proxy.login,
-                password=proxy.password
-            )
-        else:
-            proxy_dict = None
-
-        self.tg_client.proxy = proxy_dict
-
+        
+        # Read JSON data from file
         try:
-            if not self.tg_client.is_connected:
-                try:
-                    await self.tg_client.connect()
-                except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
-                    raise InvalidSession(self.session_name)
-
-            web_view = await self.tg_client.invoke(RequestWebView(
-                peer=await self.tg_client.resolve_peer('memefi_coin_bot'),
-                bot=await self.tg_client.resolve_peer('memefi_coin_bot'),
-                platform='android',
-                from_bot_menu=False,
-                url='https://tg-app.memefi.club/game'
-            ))
-
-            auth_url = web_view.url
-            tg_web_data = unquote(
-                string=unquote(
-                    string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
-
-            query_id = tg_web_data.split('query_id=', maxsplit=1)[1].split('&user', maxsplit=1)[0]
-            user_data = tg_web_data.split('user=', maxsplit=1)[1].split('&auth_date', maxsplit=1)[0]
-            auth_date = tg_web_data.split('auth_date=', maxsplit=1)[1].split('&hash', maxsplit=1)[0]
-            hash_ = tg_web_data.split('hash=', maxsplit=1)[1]
-
-            me = await self.tg_client.get_me()
-
-            json_data = {
-                'operationName': OperationName.MutationTelegramUserLogin,
-                'query': Query.MutationTelegramUserLogin,
-                'variables': {
-                    'webAppData': {
-                        'auth_date': int(auth_date),
-                        'hash': hash_,
-                        'query_id': query_id,
-                        'checkDataString': f'auth_date={auth_date}\nquery_id={query_id}\nuser={user_data}',
-                        'user': {
-                            'id': me.id,
-                            'allows_write_to_pm': True,
-                            'first_name': me.first_name,
-                            'last_name': me.last_name if me.last_name else '',
-                            'username': me.username if me.username else '',
-                            'language_code': me.language_code if me.language_code else 'en',
-                            'platform': 'ios',
-                            'version': '7.2'
-                        },
-                    },
-                }
-            }
-
-            if self.tg_client.is_connected:
-                await self.tg_client.disconnect()
-
+            with open("json/"+self.session_name+".json", 'r', encoding="utf8") as file:
+                json_data = json.load(file)
             return json_data
-
         except InvalidSession as error:
             raise error
 
@@ -525,7 +464,7 @@ class Tapper:
                     await asyncio.sleep(delay=sleep_between_clicks)
 
 
-async def run_tapper(tg_client: Client, proxy: str | None):
+async def run_tapper(tg_client: Data, proxy: str | None):
     try:
         await Tapper(tg_client=tg_client).run(proxy=proxy)
     except InvalidSession:
